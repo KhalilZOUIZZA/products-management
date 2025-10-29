@@ -1,0 +1,39 @@
+include:
+  - template: Jobs/SAST.gitlab-ci.yml
+
+stages:
+  - compile
+  - build
+  - test
+
+maven-backend-compile-job:
+  image: maven:3.9.8
+  stage: compile
+  script:
+    - echo "Compiling the project..."
+    - cd backend-ms1/
+    - mvn compile -DskipTests
+
+maven-backend-build-job:
+  image: maven:3.9.8
+  stage: build
+  script:
+    - echo "Packaging the project..."
+    - cd backend-ms1/
+    - mvn clean package -DskipTests
+  artifacts:
+    paths:
+      - backend-ms1/target/*.jar
+  dependencies:
+    - maven-backend-compile-job
+
+
+spotbugs-sast:
+  dependencies:
+    - maven-backend-build-job
+  variables:
+    MAVEN_REPO_PATH: $CI_PROJECT_DIR/backend-ms1/.m2/repository
+    COMPILE: "false"
+  artifacts:
+    reports:
+      sast: backend-ms1/target/gl-sast-report.json
